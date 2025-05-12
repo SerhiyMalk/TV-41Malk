@@ -1,3 +1,15 @@
+/* ----------------------------------------------------------------<Header>-
+Name: CW2.cpp
+Title: Grid Constraint Puzzle Solver
+Group: TV-41
+Student: [Serhiy]
+Written: 2025-04-10
+Revised: 2025-05-12
+Description: Solves a diagonal grid based puzzle with numeric node constraints.
+             Each cell contains either a forward (/) or backward (\) slash such that
+             no cycles are formed and all numeric constraints are satisfied.
+------------------------------------------------------------------</Header>-*/
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -6,10 +18,12 @@
 
 using namespace std;
 
-const int N = 8;
-const int EMPTY = 0, FORWARD = 1, BACKWARD = 2;
+const int GRID_SIZE = 8;
+const int EMPTY = 0;
+const int FORWARD = 1;
+const int BACKWARD = 2;
 
-int input[9][9] = {
+int g_input[GRID_SIZE + 1][GRID_SIZE + 1] = {
     {-1, -1, -1, 1, -1, -1, -1, -1, -1},
     {-1, 2, 1, -1, 1, 3, -1, 3, -1},
     {-1, 1, -1, 1, 1, -1, 2, -1, 1},
@@ -21,107 +35,115 @@ int input[9][9] = {
     {-1, -1, -1, -1, 1, -1, 1, 1, -1}
 };
 
-int grid[N][N];
-int parent[81];
+int g_grid[GRID_SIZE][GRID_SIZE];
+int g_parent[81];
 
 int find(int x) {
-    if (parent[x] != x) parent[x] = find(parent[x]);
-    return parent[x];
+    if (g_parent[x] != x) {
+        g_parent[x] = find(g_parent[x]);
+    }
+    return g_parent[x];
 }
 
 bool unite(int a, int b) {
-    int ra = find(a), rb = find(b);
+    int ra = find(a);
+    int rb = find(b);
     if (ra == rb) return false;
-    parent[rb] = ra;
+    g_parent[rb] = ra;
     return true;
 }
 
-bool checkNodeConstraints(int i, int j, bool final = false) {
-    int req = input[i][j];
-    if (req == -1) return true;
+bool check_node_constraints(int i, int j, bool final = false) {
+    int required = g_input[i][j];
+    if (required == -1) return true;
 
-    int cnt = 0;
+    int count = 0;
+    if (i > 0 && j > 0 && g_grid[i - 1][j - 1] == BACKWARD) count++;
+    if (i > 0 && j < GRID_SIZE && g_grid[i - 1][j] == FORWARD) count++;
+    if (i < GRID_SIZE && j > 0 && g_grid[i][j - 1] == FORWARD) count++;
+    if (i < GRID_SIZE && j < GRID_SIZE && g_grid[i][j] == BACKWARD) count++;
 
-    if (i > 0 && j > 0 && grid[i - 1][j - 1] == BACKWARD) cnt++;
-    if (i > 0 && j < N && grid[i - 1][j] == FORWARD) cnt++;
-    if (i < N && j > 0 && grid[i][j - 1] == FORWARD) cnt++;
-    if (i < N && j < N && grid[i][j] == BACKWARD) cnt++;
-
-    if (cnt > req || (final && cnt != req)) return false;
+    if (count > required || (final && count != required)) return false;
     return true;
 }
 
-bool checkAllNodes(bool final = false) {
-    for (int i = 0; i <= N; ++i)
-        for (int j = 0; j <= N; ++j)
-            if (!checkNodeConstraints(i, j, final)) return false;
+bool check_all_nodes(bool final = false) {
+    for (int i = 0; i <= GRID_SIZE; ++i) {
+        for (int j = 0; j <= GRID_SIZE; ++j) {
+            if (!check_node_constraints(i, j, final)) return false;
+        }
+    }
     return true;
 }
 
 bool solve(int x = 0, int y = 0) {
-    if (x == N) return checkAllNodes(true);
+    if (x == GRID_SIZE) return check_all_nodes(true);
 
-    int nx = (y + 1 == N) ? x + 1 : x;
-    int ny = (y + 1 == N) ? 0 : y + 1;
+    int next_x = (y + 1 == GRID_SIZE) ? x + 1 : x;
+    int next_y = (y + 1 == GRID_SIZE) ? 0 : y + 1;
 
     for (int val : {FORWARD, BACKWARD}) {
-        grid[x][y] = val;
+        g_grid[x][y] = val;
 
-        for (int i = 0; i <= N; ++i)
-            for (int j = 0; j <= N; ++j)
-                parent[i * (N + 1) + j] = i * (N + 1) + j;
+        for (int i = 0; i <= GRID_SIZE; ++i) {
+            for (int j = 0; j <= GRID_SIZE; ++j) {
+                g_parent[i * (GRID_SIZE + 1) + j] = i * (GRID_SIZE + 1) + j;
+            }
+        }
 
         bool valid = true;
-        for (int i = 0; i < N && valid; ++i) {
-            for (int j = 0; j < N && valid; ++j) {
+        for (int i = 0; i < GRID_SIZE && valid; ++i) {
+            for (int j = 0; j < GRID_SIZE && valid; ++j) {
                 int a, b;
-                if (grid[i][j] == FORWARD) {
-                    a = i * (N + 1) + j + 1;
-                    b = (i + 1) * (N + 1) + j;
+                if (g_grid[i][j] == FORWARD) {
+                    a = i * (GRID_SIZE + 1) + j + 1;
+                    b = (i + 1) * (GRID_SIZE + 1) + j;
                 } else {
-                    a = i * (N + 1) + j;
-                    b = (i + 1) * (N + 1) + j + 1;
+                    a = i * (GRID_SIZE + 1) + j;
+                    b = (i + 1) * (GRID_SIZE + 1) + j + 1;
                 }
                 if (!unite(a, b)) valid = false;
             }
         }
 
-        if (valid && checkAllNodes() && solve(nx, ny)) return true;
+        if (valid && check_all_nodes() && solve(next_x, next_y)) return true;
     }
 
-    grid[x][y] = EMPTY;
+    g_grid[x][y] = EMPTY;
     return false;
 }
 
-void printGrid() {
+void print_grid() {
     cout << "\n    ";
-    for (int j = 0; j < N; ++j) cout << j << "   ";
+    for (int j = 0; j < GRID_SIZE; ++j) cout << j << "   ";
     cout << "\n";
 
-    for (int i = 0; i <= N; ++i) {
+    for (int i = 0; i <= GRID_SIZE; ++i) {
         cout << "  ";
-        for (int j = 0; j <= N; ++j) {
-            if (input[i][j] == -1) cout << ".   ";
-            else cout << input[i][j] << "   ";
+        for (int j = 0; j <= GRID_SIZE; ++j) {
+            if (g_input[i][j] == -1) cout << ".   ";
+            else cout << g_input[i][j] << "   ";
         }
         cout << "\n";
 
-        if (i == N) break;
+        if (i == GRID_SIZE) break;
         cout << "    ";
-        for (int j = 0; j < N; ++j) {
-            if (grid[i][j] == EMPTY) cout << ".   ";
-            else cout << (grid[i][j] == FORWARD ? "/" : "\\") << "   ";
+        for (int j = 0; j < GRID_SIZE; ++j) {
+            if (g_grid[i][j] == EMPTY) cout << ".   ";
+            else cout << (g_grid[i][j] == FORWARD ? "/   " : "\\   ");
         }
         cout << "\n";
     }
     cout << "\n";
 }
 
-void loadInput() {
+void load_input() {
     cout << "Введіть новий input (рядок за рядком, 9x9, через пробіл):\n";
-    for (int i = 0; i <= N; ++i)
-        for (int j = 0; j <= N; ++j)
-            cin >> input[i][j];
+    for (int i = 0; i <= GRID_SIZE; ++i) {
+        for (int j = 0; j <= GRID_SIZE; ++j) {
+            cin >> g_input[i][j];
+        }
+    }
     cout << "Input оновлено.\n";
 }
 
@@ -139,19 +161,19 @@ int main() {
 
         switch (choice) {
             case 1:
-                fill(&grid[0][0], &grid[0][0] + sizeof(grid)/sizeof(int), EMPTY);
+                fill(&g_grid[0][0], &g_grid[0][0] + sizeof(g_grid) / sizeof(int), EMPTY);
                 if (solve()) {
                     cout << "Розв’язок знайдено!\n";
-                    printGrid();
+                    print_grid();
                 } else {
                     cout << "Розв’язок не знайдено.\n";
                 }
                 break;
             case 2:
-                printGrid();
+                print_grid();
                 break;
             case 3:
-                loadInput();
+                load_input();
                 break;
             case 4:
                 cout << "До побачення!\n";
