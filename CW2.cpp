@@ -38,6 +38,11 @@ int g_input[GRID_SIZE + 1][GRID_SIZE + 1] = {
 int g_grid[GRID_SIZE][GRID_SIZE];
 int g_parent[81];
 
+/* ---------------------------------------------------------------------[<]-
+Function: find
+Synopsis: Finds the root representative of a disjoint set using path compression.
+          Used for detecting cycles in the connectivity graph.
+---------------------------------------------------------------------[>] */
 int find(int x) {
     if (g_parent[x] != x) {
         g_parent[x] = find(g_parent[x]);
@@ -45,6 +50,11 @@ int find(int x) {
     return g_parent[x];
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: unite
+Synopsis: Unites two disjoint sets. Returns false if they were already connected
+          (which implies a cycle), otherwise connects them and returns true.
+---------------------------------------------------------------------[>] */
 bool unite(int a, int b) {
     int ra = find(a);
     int rb = find(b);
@@ -53,6 +63,12 @@ bool unite(int a, int b) {
     return true;
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: check_node_constraints
+Synopsis: Checks if a grid node (intersection point) satisfies the number of 
+          connected slashes as per the given constraint. If 'final' is true,
+          it requires exact match; otherwise, only upper-bound validation.
+---------------------------------------------------------------------[>] */
 bool check_node_constraints(int i, int j, bool final = false) {
     int required = g_input[i][j];
     if (required == -1) return true;
@@ -67,6 +83,11 @@ bool check_node_constraints(int i, int j, bool final = false) {
     return true;
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: check_all_nodes
+Synopsis: Applies check_node_constraints() to all intersections in the grid.
+          If 'final' is true, all constraints must be exactly satisfied.
+---------------------------------------------------------------------[>] */
 bool check_all_nodes(bool final = false) {
     for (int i = 0; i <= GRID_SIZE; ++i) {
         for (int j = 0; j <= GRID_SIZE; ++j) {
@@ -76,6 +97,13 @@ bool check_all_nodes(bool final = false) {
     return true;
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: solve
+Synopsis: Recursive backtracking function that attempts to fill the grid
+          with forward or backward slashes such that:
+          - Node constraints are not violated.
+          - No cycles are formed using disjoint set union.
+---------------------------------------------------------------------[>] */
 bool solve(int x = 0, int y = 0) {
     if (x == GRID_SIZE) return check_all_nodes(true);
 
@@ -113,6 +141,12 @@ bool solve(int x = 0, int y = 0) {
     return false;
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: print_grid
+Synopsis: Prints the current state of the grid. Displays:
+          - Number constraints at the intersections.
+          - Diagonal slashes placed in the cells.
+---------------------------------------------------------------------[>] */
 void print_grid() {
     cout << "\n    ";
     for (int j = 0; j < GRID_SIZE; ++j) cout << j << "   ";
@@ -137,6 +171,11 @@ void print_grid() {
     cout << "\n";
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: load_input
+Synopsis: Allows the user to manually enter new input data for the puzzle.
+          Each cell of the (9x9) input grid is entered line by line.
+---------------------------------------------------------------------[>] */
 void load_input() {
     cout << "Введіть новий input (рядок за рядком, 9x9, через пробіл):\n";
     for (int i = 0; i <= GRID_SIZE; ++i) {
@@ -147,6 +186,14 @@ void load_input() {
     cout << "Input оновлено.\n";
 }
 
+/* ---------------------------------------------------------------------[<]-
+Function: main
+Synopsis: Displays a menu-driven interface:
+          1. Solve the current puzzle.
+          2. Print the current grid.
+          3. Load a new input configuration.
+          4. Exit the program.
+---------------------------------------------------------------------[>] */
 int main() {
     while (true) {
         cout << "\n--- МЕНЮ ---\n";
