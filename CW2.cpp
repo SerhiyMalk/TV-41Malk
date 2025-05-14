@@ -105,7 +105,7 @@ Synopsis: Recursive backtracking function that attempts to fill the grid
           - No cycles are formed using disjoint set union.
 ---------------------------------------------------------------------[>] */
 bool solve(int x = 0, int y = 0) {
-    if (x == GRID_SIZE) return check_all_nodes(true);
+    if (x == GRID_SIZE) return check_all_nodes();
 
     int next_x = (y + 1 == GRID_SIZE) ? x + 1 : x;
     int next_y = (y + 1 == GRID_SIZE) ? 0 : y + 1;
